@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Create New Exam{% endblock %}
+
+{% block content %}
+  <h2 class="mb-4">Create New Exam</h2>
+
+  {% if not courses %}
+    <div class="alert alert-warning">
+      You need at least one course before creating an exam.
+      <a href="{{ url_for('courses.create_course') }}">Create a course</a>
+    </div>
+  {% else %}
+  <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="mb-3">
+      <label class="form-label">Course</label>
+      <select name="course_id" class="form-select" required>
+        <option value="">Select course...</option>
+        {% for c in courses %}
+          <option value="{{ c.id }}">{{ c.code }} – {{ c.title }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Exam Title</label>
+      <input type="text" name="title" class="form-control" required placeholder="Enter exam title">
+    </div>
+
+    <div class="row mb-3">
+      <div class="col-md-4">
+        <label class="form-label">Total Score</label>
+        <input type="number" name="total_score" class="form-control" min="1" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Exam Date</label>
+        <input type="date" name="exam_date" class="form-control" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Allowed Extensions</label>
+        <input type="text" name="allowed_extensions" class="form-control" placeholder="py,pdf,zip">
+        <div class="form-text">Leave empty to allow all types.</div>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header">Scheduling (optional)</div>
+      <div class="card-body row">
+        <div class="col-md-6">
+          <label class="form-label">Auto-start at</label>
+          <input type="datetime-local" name="scheduled_start" class="form-control">
+          <div class="form-text">Exam opens automatically at this time.</div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Duration (minutes)</label>
+          <input type="number" name="duration_minutes" class="form-control" min="0" value="0">
+          <div class="form-text">Required for scheduled exams. Or set when starting manually.</div>
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-success">Save Exam</button>
+  </form>
+  {% endif %}
+{% endblock %}

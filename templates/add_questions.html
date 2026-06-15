@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}Add Questions – {{ exam.title }}{% endblock %}
+
+{% block content %}
+  <h2 class="mb-4">Questions – {{ exam.title }}</h2>
+
+  <form method="POST" action="{{ url_for('instructor.add_questions', exam_id=exam.id) }}" enctype="multipart/form-data" class="mb-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="mb-3">
+      <label class="form-label">Question Text</label>
+      <textarea name="question_text" class="form-control" required placeholder="Type the question here"></textarea>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Proposed Score</label>
+      <input type="number" name="manual_score" class="form-control" min="0" value="0" required placeholder="Enter the score">
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Optional Image (png/jpg/gif)</label>
+      <input type="file" name="question_image" accept="image/*" class="form-control" title="Upload question image" placeholder="Choose an image file">
+    </div>
+
+    <button type="submit" class="btn btn-primary">Add Question</button>
+  </form>
+
+  {% if questions %}
+    <h4 class="mt-4">Current Questions</h4>
+    <ul class="list-group mb-4">
+      {% for q in questions %}
+        <li class="list-group-item d-flex justify-content-between align-items-start">
+          <div>
+            📌 {{ q.question_text }}
+            <span class="badge bg-secondary mx-2">{{ q.suggested_score }} points</span>
+            {% if q.question_image %}
+              <button type="button" class="btn btn-sm btn-outline-info ms-2" data-bs-toggle="modal" data-bs-target="#imgModal-{{ q.id }}">
+                📷 View Image
+              </button>
+
+              <!-- Modal -->
+              <div class="modal fade" id="imgModal-{{ q.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-centered">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title">Image</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                      <img src="{{ url_for('static', filename='uploads/' ~ q.question_image) }}" class="img-fluid rounded" alt="Question image">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+
+          <div>
+            <form method="POST" style="display:inline;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="delete_id" value="{{ q.id }}">
+              <button type="submit" class="btn btn-sm btn-outline-danger">🗑️ Delete</button>
+            </form>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endblock %}

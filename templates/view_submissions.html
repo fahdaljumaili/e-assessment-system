@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Review Submissions{% endblock %}
+{% block content %}
+  <h2 class="mb-4">Student Submissions – {{ exam.title }}</h2>
+
+  {% if submissions %}
+    <table class="table align-middle">
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>File</th>
+          <th>Grade</th>
+          <th>Feedback</th>
+          <th>Submitted</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sub in submissions %}
+        <tr>
+          <form method="POST" action="{{ url_for('instructor.grade_submission', sub_id=sub.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <td>{{ sub.username }}</td>
+            <td><a href="{{ url_for('download_submission', filename=sub.file_path) }}" target="_blank">View</a></td>
+            <td style="width:100px"><input type="number" name="grade" class="form-control form-control-sm" value="{{ sub.grade if sub.grade is not none else '' }}" required></td>
+            <td><input type="text" name="feedback" class="form-control form-control-sm" value="{{ sub.feedback or '' }}" placeholder="Optional feedback"></td>
+            <td>{{ sub.submitted_at or '—' }}</td>
+            <td><button type="submit" class="btn btn-success btn-sm">Save</button></td>
+          </form>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No submissions for this exam yet.</p>
+  {% endif %}
+
+  <a href="{{ url_for('instructor.export_grades_pdf', exam_id=exam.id) }}" class="btn btn-primary" target="_blank">Download Grades PDF</a>
+{% endblock %}

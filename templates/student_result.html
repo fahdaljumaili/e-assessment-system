@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Exam Result{% endblock %}
+{% block content %}
+  <h2 class="mb-1">{{ exam.title }}</h2>
+  {% if exam.course_code %}
+    <p class="text-muted">{{ exam.course_code }} – {{ exam.course_title }}</p>
+  {% endif %}
+
+  <div class="card shadow-sm col-md-8">
+    <div class="card-body">
+      <dl class="row mb-0">
+        <dt class="col-sm-4">Submitted at</dt>
+        <dd class="col-sm-8">{{ submission.submitted_at }}</dd>
+
+        <dt class="col-sm-4">Grade</dt>
+        <dd class="col-sm-8">
+          {% if submission.grade is not none %}
+            <span class="fs-4 fw-bold text-primary">{{ submission.grade }}</span> / {{ exam.total_score }}
+          {% else %}
+            <span class="badge bg-warning text-dark">Pending review</span>
+          {% endif %}
+        </dd>
+
+        <dt class="col-sm-4">Instructor feedback</dt>
+        <dd class="col-sm-8">
+          {% if submission.feedback %}
+            {{ submission.feedback }}
+          {% else %}
+            <span class="text-muted">No feedback yet.</span>
+          {% endif %}
+        </dd>
+      </dl>
+    </div>
+  </div>
+
+  <a href="{{ url_for('student.student_dashboard') }}" class="btn btn-outline-secondary mt-3">Back to Dashboard</a>
+{% endblock %}

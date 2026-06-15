@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}My Courses{% endblock %}
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">My Courses</h2>
+    <a href="{{ url_for('courses.create_course') }}" class="btn btn-primary">Add Course</a>
+  </div>
+
+  {% if courses %}
+  <div class="table-responsive">
+    <table class="table table-striped align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Code</th>
+          <th>Title</th>
+          <th>Students</th>
+          <th>Exams</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for course in courses %}
+        <tr>
+          <td><span class="badge bg-secondary">{{ course.code }}</span></td>
+          <td>{{ course.title }}</td>
+          <td>{{ course.student_count }}</td>
+          <td>{{ course.exam_count }}</td>
+          <td>
+            <a href="{{ url_for('courses.course_detail', course_id=course.id) }}" class="btn btn-sm btn-outline-primary">Manage</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="alert alert-info">No courses yet. Create a course to organize exams and enroll students.</div>
+  {% endif %}
+{% endblock %}

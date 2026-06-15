@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Student Dashboard{% endblock %}
+{% block content %}
+  <h2 class="mb-4">My Exams</h2>
+  {% if exams %}
+  <div class="table-responsive">
+    <table class="table table-striped align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Course</th>
+          <th>Exam</th>
+          <th>Date</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for exam in exams %}
+        <tr>
+          <td>
+            {% if exam.course_code %}
+              <span class="badge bg-secondary">{{ exam.course_code }}</span>
+            {% else %}—{% endif %}
+          </td>
+          <td>{{ exam.title }}</td>
+          <td>{{ exam.exam_date }}</td>
+          <td>
+            {% if exam.id in results %}
+              {% if results[exam.id].graded %}
+                <span class="text-success">Graded: {{ results[exam.id].grade }}/{{ exam.total_score }}</span>
+              {% else %}
+                <span class="text-info">Submitted – awaiting grade</span>
+              {% endif %}
+            {% elif exam.is_scheduled_pending %}
+              <span class="text-muted">Scheduled{% if exam.scheduled_start %} ({{ exam.scheduled_start }}){% endif %}</span>
+            {% elif exam.can_submit %}
+              <span class="text-primary">Open now</span>
+            {% elif exam.has_started %}
+              <span class="text-muted">Closed</span>
+            {% else %}
+              <span class="text-muted">Not started</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if exam.id in results %}
+              <a href="{{ url_for('student.exam_result', exam_id=exam.id) }}" class="btn btn-sm btn-outline-primary">View Result</a>
+            {% elif exam.can_submit %}
+              <a href="{{ url_for('student.submit_exam', exam_id=exam.id) }}" class="btn btn-sm btn-primary">Submit</a>
+            {% else %}
+              —
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="alert alert-info">No exams available. You will see exams for courses you are enrolled in.</div>
+  {% endif %}
+{% endblock %}

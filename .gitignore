@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+db.sqlite3
+submissions/*
+!submissions/.gitkeep
+question_images/*
+!question_images/.gitkeep
+static/uploads/*
+!static/uploads/.gitkeep
+.vscode/
+.idea/
+*.log
+Thumbs.db
+Desktop.ini

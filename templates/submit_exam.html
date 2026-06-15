@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% block title %}Exam Submission – {{ exam.title }}{% endblock %}
+{% block content %}
+  <h2 class="mb-4">Exam Submission: {{ exam.title }}</h2>
+
+  <!-- Countdown Timer -->
+  <div id="timer" class="fw-bold text-danger mb-3"></div>
+  <script>
+    (function() {
+      const timerEl = document.getElementById('timer');
+      const durationMs = Number("{{ duration }}") * 60 * 1000;
+      const start = new Date("{{ start_time }}").getTime();
+      const end = start + durationMs;
+
+      function update() {
+        const now = Date.now();
+        const diff = end - now;
+        if (diff <= 0) {
+          timerEl.innerHTML = '⏰ Exam time has ended';
+          clearInterval(interval);
+          document.querySelector('button[type="submit"]').disabled = true;
+        } else {
+          const mins = Math.floor(diff / 60000);
+          const secs = Math.floor((diff % 60000) / 1000);
+          timerEl.innerHTML = `⏳ ${mins}m ${secs<10?'0':''}${secs}s`;
+        }
+      }
+      update();
+      const interval = setInterval(update, 1000);
+    })();
+  </script>
+
+  {% if has_submitted %}
+    <!-- If the student has already submitted -->
+    <div class="alert alert-info">✅ You have already submitted your answer</div>
+    <form method="POST" action="{{ url_for('student.withdraw_submission', exam_id=exam.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-warning">Withdraw Submission</button>
+    </form>
+  {% else %}
+    <!-- Display Questions -->
+    {% if questions %}
+      <div class="mb-4">
+        <h4>📋 Required Questions:</h4>
+        <ol>
+          {% for q in questions %}
+            <li>
+              {{ q.question_text }} <span class="badge bg-secondary">{{ q.suggested_score }} points</span>
+              {% if q.question_image %}
+  <button type="button" class="btn btn-sm btn-info mt-2" data-bs-toggle="modal" data-bs-target="#imgModal-{{ q.id }}">📷 Show Image</button>
+
+  <div class="modal fade" id="imgModal-{{ q.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Image</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center">
+          <img src="{{ url_for('static', filename='uploads/' ~ q.question_image) }}" class="img-fluid rounded" alt="Question image">
+        </div>
+      </div>
+    </div>
+  </div>
+{% endif %}
+
+            </li>
+          {% endfor %}
+        </ol>
+      </div>
+    {% endif %}
+
+    <script>
+      function toggleImage(id) {
+        const el = document.getElementById(id);
+        el.style.display = (el.style.display === 'none') ? 'block' : 'none';
+      }
+    </script>
+
+    <!-- Answer Upload Form -->
+    <form method="POST" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="mb-3">
+        <label class="form-label">Select Answer File</label>
+        <input type="file" name="submission_file" class="form-control" required title="Select your answer file" placeholder="Please choose your answer file">
+      </div>
+      <button type="submit" class="btn btn-success">Submit Your Answer</button>
+    </form>
+  {% endif %}
+{% endblock %}

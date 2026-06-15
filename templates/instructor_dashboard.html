@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% block title %}Instructor Dashboard{% endblock %}
+{% block content %}
+  <h2 class="mb-4 text-center">Instructor Dashboard</h2>
+
+  <div class="d-flex justify-content-between mb-4">
+    <div>
+      <a href="{{ url_for('instructor.create_exam') }}" class="btn btn-primary me-2">Create Exam</a>
+      <a href="{{ url_for('courses.list_courses') }}" class="btn btn-outline-primary">Courses</a>
+    </div>
+  </div>
+
+  {% if exams %}
+  <div class="table-responsive">
+    <table class="table table-striped align-middle text-center">
+      <thead class="table-light">
+        <tr>
+          <th>Title</th>
+          <th>Course</th>
+          <th>Date</th>
+          <th>Duration</th>
+          <th>Countdown</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for exam in exams %}
+        <tr>
+          <td class="text-start">
+            {{ exam.title }}
+            <span class="badge bg-info text-dark ms-2">{{ exam.submission_count }} submissions</span>
+          </td>
+          <td>{% if exam.course_code %}<span class="badge bg-secondary">{{ exam.course_code }}</span>{% else %}—{% endif %}</td>
+          <td>{{ exam.exam_date }}</td>
+          <td>
+            {% if exam.duration_minutes %}
+              {{ exam.duration_minutes }}
+            {% else %}-{% endif %}
+          </td>
+
+          <td>
+            <div id="countdown-{{ exam.id }}" class="fw-bold text-danger mb-1"></div>
+
+            {% if exam.start_time and exam.duration_minutes %}
+<script>
+(function() {
+  const countdownId = 'countdown-{{ exam.id }}';
+  const startMs = new Date("{{ exam.start_time }}").getTime();
+  const endMs = startMs + Number("{{ exam.duration_minutes|int }}") * 60 * 1000;
+  let finishedPosted = false;
+
+  function update() {
+    const now = Date.now();
+    const diff = endMs - now;
+    const countdownEl = document.getElementById(countdownId);
+
+    if (diff <= 0) {
+      if (!finishedPosted) {
+        finishedPosted = true;
+        fetch("{{ url_for('instructor.finish_exam', exam_id=exam.id) }}", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "X-CSRFToken": document.querySelector('meta[name="csrf-token"]').content
+          }
+        }).finally(() => {
+          setTimeout(() => location.reload(), 300);
+        });
+      } else {
+        setTimeout(() => location.reload(), 300);
+      }
+      clearInterval(interval);
+      return;
+    }
+
+    const mins = Math.floor(diff / 60000);
+    const secs = Math.floor((diff % 60000) / 1000);
+    if (countdownEl) countdownEl.innerHTML = `⏳ ${mins}m ${secs<10?'0':''}${secs}s`;
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      update();
+      window['__exam_interval_{{ exam.id }}'] = setInterval(update, 1000);
+    });
+  } else {
+    update();
+    window['__exam_interval_{{ exam.id }}'] = setInterval(update, 1000);
+  }
+})();
+</script>
+
+            {% elif exam.is_scheduled_pending %}
+              <span class="badge bg-warning text-dark">Scheduled</span>
+            {% else %}-{% endif %}
+          </td>
+
+          <td id="exam-actions-{{ exam.id }}" class="d-flex flex-column gap-2">
+            {% if exam.is_active %}
+                {% if exam.is_finished %}
+                    <span class="text-danger">Exam Finished</span>
+                {% else %}
+                    <form method="POST" action="{{ url_for('instructor.finish_exam', exam_id=exam.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-danger">End Exam</button>
+                    </form>
+                {% endif %}
+            {% elif exam.is_scheduled_pending %}
+                <span class="text-muted">Waiting for scheduled start</span>
+            {% else %}
+                <form method="POST" action="{{ url_for('instructor.start_exam', exam_id=exam.id) }}" class="d-flex">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="number" name="duration_minutes" class="form-control form-control-sm me-2"
+                         placeholder="Duration" min="1" value="{{ exam.duration_minutes or '' }}" required>
+                  <button type="submit" class="btn btn-success btn-sm">Start</button>
+                </form>
+            {% endif %}
+
+            <div class="d-flex gap-1 justify-content-center mt-2">
+              <a href="{{ url_for('instructor.view_submissions', exam_id=exam.id) }}" class="btn btn-sm btn-outline-primary">📥 Review</a>
+              <a href="{{ url_for('instructor.add_questions', exam_id=exam.id) }}" class="btn btn-sm btn-success">✏️ Questions</a>
+              <form method="POST" action="{{ url_for('instructor.delete_exam', exam_id=exam.id) }}" style="display:inline;"
+                onsubmit="return confirm('Are you sure you want to delete this exam along with all submissions and questions? This action cannot be undone.');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="alert alert-warning text-center">No exams available yet.</div>
+  {% endif %}
+{% endblock %}
