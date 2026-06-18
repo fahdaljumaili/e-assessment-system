@@ -11,6 +11,8 @@ import config
 from db import get_db_connection
 from decorators import login_required, instructor_required
 from utils import allowed_submission, save_question_image, save_submission_file, activate_scheduled_exams, parse_exam_times
+from mcq import enrich_questions, validate_mcq_form
+import json
 
 instructor_bp = Blueprint('instructor', __name__, url_prefix='/instructor')
 
@@ -194,6 +196,34 @@ def add_questions(exam_id):
         conn.close()
         return redirect(url_for('instructor.add_questions', exam_id=exam_id, mode=mode))
 
+    if request.method == 'POST' and request.form.get('question_type') == 'mcq':
+        question_text = request.form.get('question_text', '').strip()
+        manual_score = int(request.form.get('manual_score', 0) or 0)
+        mcq_data, err = validate_mcq_form(request.form)
+        if err:
+            flash(err, 'danger')
+            conn.close()
+            return redirect(url_for('instructor.add_questions', exam_id=exam_id, mode=mode))
+        if not question_text:
+            flash('Question text is required.', 'danger')
+            conn.close()
+            return redirect(url_for('instructor.add_questions', exam_id=exam_id, mode=mode))
+
+        conn.execute(
+            '''INSERT INTO questions
+               (exam_id, question_text, suggested_score, question_type, mcq_options, correct_option)
+               VALUES (?, ?, ?, 'mcq', ?, ?)''',
+            (
+                exam_id, question_text, manual_score,
+                json.dumps(mcq_data['options'], ensure_ascii=False),
+                mcq_data['correct_option'],
+            ),
+        )
+        conn.commit()
+        flash('MCQ question added!', 'success')
+        conn.close()
+        return redirect(url_for('instructor.add_questions', exam_id=exam_id, mode=mode))
+
     if request.method == 'POST' and 'question_text' in request.form:
         question_text = request.form['question_text'].strip()
         manual_score = int(request.form.get('manual_score', 0) or 0)
@@ -209,7 +239,9 @@ def add_questions(exam_id):
                 img_filename = result
 
         conn.execute(
-            'INSERT INTO questions (exam_id, question_text, suggested_score, question_image) VALUES (?, ?, ?, ?)',
+            '''INSERT INTO questions
+               (exam_id, question_text, suggested_score, question_image, question_type)
+               VALUES (?, ?, ?, ?, 'file')''',
             (exam_id, question_text, manual_score, img_filename),
         )
         conn.commit()
@@ -217,7 +249,9 @@ def add_questions(exam_id):
         conn.close()
         return redirect(url_for('instructor.add_questions', exam_id=exam_id, mode=mode))
 
-    questions = conn.execute('SELECT * FROM questions WHERE exam_id = ?', (exam_id,)).fetchall()
+    questions = enrich_questions(conn.execute(
+        'SELECT * FROM questions WHERE exam_id = ? ORDER BY id', (exam_id,)
+    ).fetchall())
     conn.close()
     return render_template('add_questions.html', exam=exam, questions=questions, mode=mode)
 
@@ -232,13 +266,17 @@ def view_submissions(exam_id):
         conn.close()
         abort(404)
     subs = conn.execute('''
-        SELECT s.*, u.full_name, u.username, s.grade, s.feedback
+        SELECT s.*, u.full_name, u.username, s.grade, s.feedback, s.mcq_score, s.file_path
         FROM submissions s
         JOIN users u ON s.student_id = u.id
         WHERE s.exam_id = ?
     ''', (exam_id,)).fetchall()
+    has_mcq = conn.execute(
+        "SELECT 1 FROM questions WHERE exam_id = ? AND question_type = 'mcq' LIMIT 1",
+        (exam_id,),
+    ).fetchone()
     conn.close()
-    return render_template('view_submissions.html', exam=exam, submissions=subs)
+    return render_template('view_submissions.html', exam=exam, submissions=subs, has_mcq=bool(has_mcq))
 
 
 @instructor_bp.route('/submission/<int:sub_id>/grade', methods=['POST'], endpoint='grade_submission')

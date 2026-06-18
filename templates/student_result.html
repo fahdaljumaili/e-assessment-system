@@ -6,13 +6,18 @@
     <p class="text-muted">{{ exam.course_code }} – {{ exam.course_title }}</p>
   {% endif %}
 
-  <div class="card shadow-sm col-md-8">
+  <div class="card shadow-sm col-md-8 mb-4">
     <div class="card-body">
       <dl class="row mb-0">
         <dt class="col-sm-4">Submitted at</dt>
         <dd class="col-sm-8">{{ submission.submitted_at }}</dd>
 
-        <dt class="col-sm-4">Grade</dt>
+        {% if submission.mcq_score is not none and submission.mcq_score > 0 %}
+        <dt class="col-sm-4">MCQ score</dt>
+        <dd class="col-sm-8"><span class="badge bg-success">{{ submission.mcq_score }} pts (auto-graded)</span></dd>
+        {% endif %}
+
+        <dt class="col-sm-4">Total grade</dt>
         <dd class="col-sm-8">
           {% if submission.grade is not none %}
             <span class="fs-4 fw-bold text-primary">{{ submission.grade }}</span> / {{ exam.total_score }}
@@ -23,15 +28,39 @@
 
         <dt class="col-sm-4">Instructor feedback</dt>
         <dd class="col-sm-8">
-          {% if submission.feedback %}
-            {{ submission.feedback }}
-          {% else %}
-            <span class="text-muted">No feedback yet.</span>
-          {% endif %}
+          {% if submission.feedback %}{{ submission.feedback }}{% else %}<span class="text-muted">No feedback yet.</span>{% endif %}
         </dd>
       </dl>
     </div>
   </div>
+
+  {% if mcq_breakdown %}
+    <h4>MCQ Details</h4>
+    <div class="col-md-8">
+      {% for ans in mcq_breakdown %}
+        <div class="card mb-2">
+          <div class="card-body py-2">
+            <p class="mb-1">{{ ans.question_text }}</p>
+            {% if ans.selected_option is not none and ans.options %}
+              <small>
+                Your answer:
+                <strong>{{ ['A','B','C','D','E','F'][ans.selected_option] }}. {{ ans.options[ans.selected_option] }}</strong>
+                {% if ans.is_correct %}
+                  <span class="text-success">Correct (+{{ ans.points_earned }})</span>
+                {% else %}
+                  <span class="text-danger">Wrong (0)</span>
+                  — Correct:
+                  <strong>{{ ['A','B','C','D','E','F'][ans.correct_option] }}. {{ ans.options[ans.correct_option] }}</strong>
+                {% endif %}
+              </small>
+            {% else %}
+              <small class="text-muted">Not answered</small>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
 
   <a href="{{ url_for('student.student_dashboard') }}" class="btn btn-outline-secondary mt-3">Back to Dashboard</a>
 {% endblock %}

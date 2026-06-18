@@ -9,6 +9,7 @@
         <tr>
           <th>Username</th>
           <th>File</th>
+          {% if has_mcq %}<th>MCQ</th>{% endif %}
           <th>Grade</th>
           <th>Feedback</th>
           <th>Submitted</th>
@@ -21,9 +22,20 @@
           <form method="POST" action="{{ url_for('instructor.grade_submission', sub_id=sub.id) }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <td>{{ sub.username }}</td>
-            <td><a href="{{ url_for('download_submission', filename=sub.file_path) }}" target="_blank">View</a></td>
-            <td style="width:100px"><input type="number" name="grade" class="form-control form-control-sm" value="{{ sub.grade if sub.grade is not none else '' }}" required></td>
-            <td><input type="text" name="feedback" class="form-control form-control-sm" value="{{ sub.feedback or '' }}" placeholder="Optional feedback"></td>
+            <td>
+              {% if sub.file_path and sub.file_path != '__mcq_only__' %}
+                <a href="{{ url_for('download_submission', filename=sub.file_path) }}" target="_blank">View</a>
+              {% else %}
+                <span class="text-muted">MCQ only</span>
+              {% endif %}
+            </td>
+            {% if has_mcq %}
+            <td>
+              {% if sub.mcq_score is not none %}{{ sub.mcq_score }}{% else %}—{% endif %}
+            </td>
+            {% endif %}
+            <td style="width:90px"><input type="number" name="grade" class="form-control form-control-sm" value="{{ sub.grade if sub.grade is not none else '' }}" required></td>
+            <td><input type="text" name="feedback" class="form-control form-control-sm" value="{{ sub.feedback or '' }}" placeholder="Feedback"></td>
             <td>{{ sub.submitted_at or '—' }}</td>
             <td><button type="submit" class="btn btn-success btn-sm">Save</button></td>
           </form>
@@ -31,6 +43,9 @@
         {% endfor %}
       </tbody>
     </table>
+    {% if has_mcq %}
+      <p class="small text-muted">MCQ column shows auto-graded score. Set total grade manually for mixed exams (MCQ + file).</p>
+    {% endif %}
   {% else %}
     <p>No submissions for this exam yet.</p>
   {% endif %}

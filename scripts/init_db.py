@@ -45,6 +45,25 @@ def migrate_db():
     _add_column(cur, 'exams', 'course_id', 'INTEGER REFERENCES courses(id)')
     _add_column(cur, 'exams', 'scheduled_start', 'TEXT')
 
+    _add_column(cur, 'questions', 'question_type', "TEXT NOT NULL DEFAULT 'file'")
+    _add_column(cur, 'questions', 'mcq_options', 'TEXT')
+    _add_column(cur, 'questions', 'correct_option', 'INTEGER')
+    _add_column(cur, 'submissions', 'mcq_score', 'INTEGER DEFAULT 0')
+
+    cur.execute('''
+    CREATE TABLE IF NOT EXISTS mcq_answers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        submission_id INTEGER NOT NULL,
+        question_id INTEGER NOT NULL,
+        selected_option INTEGER,
+        is_correct INTEGER NOT NULL DEFAULT 0,
+        points_earned INTEGER NOT NULL DEFAULT 0,
+        FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE,
+        FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE,
+        UNIQUE(submission_id, question_id)
+    )
+    ''')
+
     # Demo course for existing installations
     instructor = cur.execute("SELECT id FROM users WHERE username = 'instructor1'").fetchone()
     student = cur.execute("SELECT id FROM users WHERE username = 'student1'").fetchone()
@@ -128,6 +147,9 @@ def init_db():
         question_image TEXT,
         exam_id INTEGER NOT NULL,
         question_text TEXT NOT NULL,
+        question_type TEXT NOT NULL DEFAULT 'file',
+        mcq_options TEXT,
+        correct_option INTEGER,
         suggested_score INTEGER NOT NULL DEFAULT 0,
         FOREIGN KEY (exam_id) REFERENCES exams(id)
     )
@@ -139,11 +161,26 @@ def init_db():
         student_id INTEGER NOT NULL,
         exam_id INTEGER NOT NULL,
         file_path TEXT NOT NULL,
+        mcq_score INTEGER DEFAULT 0,
         grade INTEGER,
         feedback TEXT,
         submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (student_id) REFERENCES users(id),
         FOREIGN KEY (exam_id) REFERENCES exams(id)
+    )
+    ''')
+
+    cur.execute('''
+    CREATE TABLE IF NOT EXISTS mcq_answers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        submission_id INTEGER NOT NULL,
+        question_id INTEGER NOT NULL,
+        selected_option INTEGER,
+        is_correct INTEGER NOT NULL DEFAULT 0,
+        points_earned INTEGER NOT NULL DEFAULT 0,
+        FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE,
+        FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE,
+        UNIQUE(submission_id, question_id)
     )
     ''')
 

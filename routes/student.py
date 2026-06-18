@@ -9,6 +9,11 @@ from utils import (
     allowed_submission, save_submission_file,
     activate_scheduled_exams, parse_exam_times, student_can_access_exam,
 )
+from mcq import (
+    enrich_questions, exam_has_file_questions, exam_has_mcq_questions,
+    grade_mcq_answers, get_mcq_breakdown, MCQ_ONLY_FILE_PATH,
+)
+import json
 
 student_bp = Blueprint('student', __name__)
 
@@ -79,13 +84,31 @@ def exam_result(exam_id):
         'SELECT * FROM submissions WHERE exam_id = ? AND student_id = ?',
         (exam_id, session['user_id']),
     ).fetchone()
+
+    mcq_breakdown = []
+    if submission:
+        raw = get_mcq_breakdown(conn, submission['id'])
+        for r in raw:
+            item = dict(r)
+            if item.get('mcq_options'):
+                try:
+                    item['options'] = json.loads(item['mcq_options'])
+                except (json.JSONDecodeError, TypeError):
+                    item['options'] = []
+            mcq_breakdown.append(item)
+
     conn.close()
 
     if not submission:
         flash('You have not submitted this exam yet.', 'warning')
         return redirect(url_for('student.student_dashboard'))
 
-    return render_template('student_result.html', exam=exam, submission=submission)
+    return render_template(
+        'student_result.html',
+        exam=exam,
+        submission=submission,
+        mcq_breakdown=mcq_breakdown,
+    )
 
 
 @student_bp.route('/submit_exam/<int:exam_id>', methods=['GET', 'POST'], endpoint='submit_exam')
@@ -115,7 +138,12 @@ def submit_exam(exam_id):
         return redirect(url_for('student.student_dashboard'))
 
     start_time = timing['start_dt']
-    questions = conn.execute('SELECT * FROM questions WHERE exam_id = ?', (exam_id,)).fetchall()
+    question_rows = conn.execute(
+        'SELECT * FROM questions WHERE exam_id = ? ORDER BY id', (exam_id,)
+    ).fetchall()
+    questions = enrich_questions(question_rows)
+    needs_file = exam_has_file_questions(questions)
+    has_mcq = exam_has_mcq_questions(questions)
     submission = conn.execute(
         'SELECT * FROM submissions WHERE exam_id = ? AND student_id = ?',
         (exam_id, session['user_id']),
@@ -127,35 +155,64 @@ def submit_exam(exam_id):
             conn.close()
             return redirect(url_for('student.student_dashboard'))
 
-        if 'submission_file' not in request.files:
-            flash('Please select a file.', 'danger')
-            conn.close()
-            return redirect(request.url)
+        if has_mcq:
+            mcq_ids = [q['id'] for q in questions if q['question_type'] == 'mcq']
+            missing = [qid for qid in mcq_ids if request.form.get(f'mcq_{qid}') in (None, '')]
+            if missing:
+                flash('Please answer all multiple-choice questions.', 'danger')
+                conn.close()
+                return redirect(request.url)
 
-        file = request.files['submission_file']
-        if file.filename == '':
-            flash('No file selected.', 'danger')
-            conn.close()
-            return redirect(request.url)
-
-        if not allowed_submission(file.filename, exam['allowed_extensions']):
-            allowed = exam['allowed_extensions'] or 'any'
-            flash(f'File type not allowed. Allowed extensions: {allowed}', 'danger')
-            conn.close()
-            return redirect(request.url)
-
-        filename = save_submission_file(file, session['user_id'], exam_id)
-        if not filename:
-            flash('Invalid file name.', 'danger')
-            conn.close()
-            return redirect(request.url)
+        file_path = MCQ_ONLY_FILE_PATH
+        if needs_file:
+            if 'submission_file' not in request.files:
+                flash('Please select a file.', 'danger')
+                conn.close()
+                return redirect(request.url)
+            file = request.files['submission_file']
+            if file.filename == '':
+                flash('No file selected.', 'danger')
+                conn.close()
+                return redirect(request.url)
+            if not allowed_submission(file.filename, exam['allowed_extensions']):
+                allowed = exam['allowed_extensions'] or 'any'
+                flash(f'File type not allowed. Allowed extensions: {allowed}', 'danger')
+                conn.close()
+                return redirect(request.url)
+            saved = save_submission_file(file, session['user_id'], exam_id)
+            if not saved:
+                flash('Invalid file name.', 'danger')
+                conn.close()
+                return redirect(request.url)
+            file_path = saved
 
         conn.execute(
-            'INSERT INTO submissions (student_id, exam_id, file_path, submitted_at) VALUES (?, ?, ?, ?)',
-            (session['user_id'], exam_id, filename, datetime.now().strftime('%Y-%m-%d %H:%M:%S')),
+            '''INSERT INTO submissions
+               (student_id, exam_id, file_path, submitted_at, mcq_score)
+               VALUES (?, ?, ?, ?, 0)''',
+            (
+                session['user_id'], exam_id, file_path,
+                datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            ),
         )
+        submission_id = conn.execute('SELECT last_insert_rowid()').fetchone()[0]
+
+        mcq_score = grade_mcq_answers(conn, submission_id, exam_id, request.form) if has_mcq else 0
+        if not needs_file:
+            grade = mcq_score
+        elif mcq_score:
+            grade = mcq_score
+        else:
+            grade = None
+
+        conn.execute(
+            'UPDATE submissions SET mcq_score = ?, grade = ? WHERE id = ?',
+            (mcq_score, grade, submission_id),
+        )
+
         conn.commit()
         conn.close()
+        flash('Exam submitted successfully!', 'success')
         return redirect(url_for('student.submit_exam', exam_id=exam_id))
 
     conn.close()
@@ -166,6 +223,8 @@ def submit_exam(exam_id):
         has_submitted=bool(submission),
         start_time=start_time,
         duration=exam['duration_minutes'],
+        needs_file=needs_file,
+        has_mcq=has_mcq,
     )
 
 
