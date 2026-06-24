@@ -1,6 +1,6 @@
 # E-Assessment System
 
-An electronic assessment system built with **Flask** to manage exams and courses between instructors, students, and administrators.
+An electronic assessment system built with **Flask** to manage exams.
 
 ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat&logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-3.0-000000?style=flat&logo=flask&logoColor=white)
