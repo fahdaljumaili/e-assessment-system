@@ -1,6 +1,6 @@
 # E-Assessment System
 
-نظام تقييم إلكتروني مبني بـ **Flask** لإدارة الاختبارات والمقررات الدراسية بين المحاضرين والطلاب والمشرفين.
+An electronic assessment system built with **Flask** to manage exams and courses between instructors, students, and administrators.
 
 ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat&logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-3.0-000000?style=flat&logo=flask&logoColor=white)
@@ -11,154 +11,154 @@
 
 ---
 
-## 🖼️ لقطات الشاشة
+## 🖼️ Screenshots
 
-### صفحة تسجيل الدخول
+### Login Page
 ![Login Page](docs/screenshots/login.png)
 
-### لوحة تحكم المحاضر
+### Instructor Dashboard
 ![Instructor Dashboard](docs/screenshots/instructor_dashboard.png)
 
-### لوحة تحكم الطالب
+### Student Dashboard
 ![Student Dashboard](docs/screenshots/student_dashboard.png)
 
-### صفحة المقررات
+### Courses Page
 ![Courses Page](docs/screenshots/courses.png)
 
 ---
 
-## 📋 المحتويات
+## 📋 Table of Contents
 
-- [لقطات الشاشة](#️-لقطات-الشاشة)
-- [المتطلبات](#المتطلبات)
-- [التثبيت والتشغيل](#التثبيت-والتشغيل)
-- [تشغيل الإنتاج](#تشغيل-الإنتاج-waitress)
-- [المتغيرات البيئية](#المتغيرات-البيئية)
-- [هيكل المشروع](#هيكل-المشروع)
-- [قاعدة البيانات](#قاعدة-البيانات)
-- [الميزات](#الميزات)
-- [حسابات تجريبية](#حسابات-تجريبية)
-- [استيراد الطلاب عبر CSV](#استيراد-الطلاب-عبر-csv)
-- [الأمان](#الأمان)
-- [النشر على GitHub](#النشر-على-github)
+- [Screenshots](#️-screenshots)
+- [Prerequisites](#prerequisites)
+- [Installation and Setup](#installation-and-setup)
+- [Production Deployment](#production-deployment-waitress)
+- [Environment Variables](#environment-variables)
+- [Project Structure](#project-structure)
+- [Database Schema](#database-schema)
+- [Features](#features)
+- [Demo Credentials](#demo-credentials)
+- [Importing Students via CSV](#importing-students-via-csv)
+- [Security](#security)
+- [Publishing to GitHub](#publishing-to-github)
 
 ---
 
-## المتطلبات
+## Prerequisites
 
-- Python 3.10 أو أحدث
+- Python 3.10 or higher
 - pip
 
-### الحزم المستخدمة
+### Packages Used
 
-| الحزمة | الإصدار | الغرض |
+| Package | Version | Purpose |
 |--------|---------|--------|
-| Flask | ≥ 3.0 | إطار العمل الرئيسي |
-| Werkzeug | ≥ 3.0 | تشفير كلمات المرور ومعالجة الملفات |
-| Flask-WTF | ≥ 1.2 | حماية CSRF للنماذج |
-| Jinja2 | ≥ 3.1 | محرك القوالب HTML |
-| ReportLab | ≥ 4.0 | توليد ملفات PDF لتقارير الدرجات |
-| Waitress | ≥ 3.0 | خادم إنتاج متوافق مع Windows |
+| Flask | ≥ 3.0 | Core web framework |
+| Werkzeug | ≥ 3.0 | Password hashing and file handling |
+| Flask-WTF | ≥ 1.2 | CSRF protection for forms |
+| Jinja2 | ≥ 3.1 | HTML templating engine |
+| ReportLab | ≥ 4.0 | PDF generation for grade reports |
+| Waitress | ≥ 3.0 | Windows-compatible production WSGI server |
 
 ---
 
-## التثبيت والتشغيل
+## Installation and Setup
 
 ```bash
-# 1. إنشاء بيئة افتراضية (موصى به)
+# 1. Create a virtual environment (recommended)
 python -m venv .venv
 
-# تفعيل البيئة الافتراضية
+# Activate the virtual environment
 .venv\Scripts\activate        # Windows
 # source .venv/bin/activate   # Linux/macOS
 
-# 2. تثبيت الحزم المطلوبة
+# 2. Install required packages
 pip install -r requirements.txt
 
-# 3. تهيئة قاعدة البيانات (أول مرة فقط)
+# 3. Initialize the database (first time only)
 python scripts/init_db.py
 
-# 4. تشغيل التطبيق في وضع التطوير
+# 4. Run the application in development mode
 python app.py
 ```
 
-افتح المتصفح على: **http://localhost:5000**
+Open your browser at: **http://localhost:5000**
 
-> **ملاحظة:** إذا كانت قاعدة البيانات موجودة مسبقاً وتريد ترقيتها فقط:
+> **Note:** If the database already exists and you only want to apply migrations:
 > ```bash
 > python scripts/migrate_db.py
 > ```
 
 ---
 
-## تشغيل الإنتاج (Waitress)
+## Production Deployment (Waitress)
 
 ```bash
-# 1. انسخ ملف الإعدادات وعدّله
+# 1. Copy and modify the environment file
 copy .env.example .env        # Windows
 # cp .env.example .env        # Linux/macOS
 
-# 2. في ملف .env — مهم جداً قبل النشر:
-#    SECRET_KEY=سلسلة-عشوائية-طويلة-وآمنة
+# 2. In the .env file — very important before deployment:
+#    SECRET_KEY=a-long-secure-random-string
 #    FLASK_DEBUG=0
-#    SESSION_COOKIE_SECURE=1   # عند استخدام HTTPS فقط
+#    SESSION_COOKIE_SECURE=1   # Only when using HTTPS
 
-# 3. تشغيل خادم الإنتاج
+# 3. Run the production server
 python run_production.py
 ```
 
-> **Windows:** Waitress هو الخيار الموصى به للإنتاج على Windows.
-> **Linux:** يمكن استخدام Gunicorn بدلاً منه عبر: `gunicorn wsgi:app`
+> **Windows:** Waitress is the recommended option for production on Windows.
+> **Linux:** You can use Gunicorn instead via: `gunicorn wsgi:app`
 
-> **تنبيه للنشر الفعلي:** حسابات التجربة (`1234` / `admin123`) مخصصة للتطوير فقط. يجب تغييرها أو حذفها قبل الاستخدام الرسمي.
+> **Deployment Warning:** Demo accounts (`1234` / `admin123`) are for development only. Make sure to change or delete them before public deployment.
 
 ---
 
-## المتغيرات البيئية
+## Environment Variables
 
-يتم تحميل المتغيرات تلقائياً من ملف `.env` في جذر المشروع.
+Variables are loaded automatically from the `.env` file in the project root.
 
-| المتغير | الوصف | القيمة الافتراضية |
+| Variable | Description | Default Value |
 |---------|-------|--------------------|
-| `SECRET_KEY` | مفتاح تشفير جلسات Flask | قيمة غير آمنة — **إلزامي تغييره في الإنتاج** |
-| `FLASK_DEBUG` | وضع التصحيح (`1` = مفعّل، `0` = معطّل) | `1` |
-| `HOST` | عنوان IP للاستماع | `0.0.0.0` |
-| `PORT` | رقم المنفذ | `5000` |
-| `SESSION_COOKIE_SECURE` | تفعيل كوكيز آمنة عبر HTTPS (`1` أو `0`) | `0` |
-| `DATABASE` | مسار ملف قاعدة البيانات | `db.sqlite3` |
-| `UPLOAD_FOLDER` | مجلد حفظ إجابات الطلاب | `submissions` |
-| `QUESTION_IMG_FOLDER` | مجلد صور الأسئلة | `question_images` |
+| `SECRET_KEY` | Flask session encryption key | Insecure value — **Mandatory to change in production** |
+| `FLASK_DEBUG` | Debug mode (`1` = enabled, `0` = disabled) | `1` |
+| `HOST` | IP address to listen on | `0.0.0.0` |
+| `PORT` | Port number | `5000` |
+| `SESSION_COOKIE_SECURE` | Enable secure cookies over HTTPS (`1` or `0`) | `0` |
+| `DATABASE` | Database file path | `db.sqlite3` |
+| `UPLOAD_FOLDER` | Directory to save student submissions | `submissions` |
+| `QUESTION_IMG_FOLDER` | Directory for question images | `question_images` |
 
 ---
 
-## هيكل المشروع
+## Project Structure
 
 ```
 E-Assessment System/
 │
-├── app.py                   # نقطة الدخول — وضع التطوير
-├── run_production.py        # خادم الإنتاج (Waitress)
-├── wsgi.py                  # واجهة WSGI للنشر خلف Nginx/Apache
-├── config.py                # إعدادات التطبيق والمتغيرات البيئية
-├── db.py                    # اتصال قاعدة البيانات SQLite
-├── decorators.py            # حماية المسارات (تسجيل الدخول / الأدوار)
-├── utils.py                 # دوال مساعدة مشتركة
-├── mcq.py                   # منطق أسئلة الاختيار من متعدد (MCQ)
-├── file_access.py           # التحكم في الوصول للملفات المحمية
-├── requirements.txt         # قائمة الحزم المطلوبة
-├── .env.example             # نموذج متغيرات البيئة
+├── app.py                   # Entry point — Development mode
+├── run_production.py        # Production server (Waitress)
+├── wsgi.py                  # WSGI interface for deployment behind Nginx/Apache
+├── config.py                # Application settings and environment variables
+├── db.py                    # SQLite database connection
+├── decorators.py            # Route protection (Authentication / Role-based access)
+├── utils.py                 # Shared helper functions
+├── mcq.py                   # Multiple Choice Questions (MCQ) logic
+├── file_access.py           # Protected file access control
+├── requirements.txt         # Required packages list
+├── .env.example             # Template for environment variables
 │
-├── routes/                  # مسارات التطبيق (Blueprints)
-│   ├── auth.py              # تسجيل الدخول والخروج والتوجيه
-│   ├── instructor.py        # إدارة الاختبارات والأسئلة والتصحيح
-│   ├── student.py           # عرض الاختبارات ورفع الإجابات
-│   ├── admin.py             # إدارة المستخدمين (مدير النظام)
-│   ├── courses.py           # إدارة المقررات والتسجيل
-│   └── files.py             # تحميل الملفات المحمية
+├── routes/                  # App routes (Blueprints)
+│   ├── auth.py              # Login, logout, and redirection
+│   ├── instructor.py        # Exam, question, and grading management
+│   ├── student.py           # View exams and submit answers
+│   ├── admin.py             # User management (System Administrator)
+│   ├── courses.py           # Course management and enrollment
+│   └── files.py             # Secure file download handler
 │
-├── templates/               # قوالب HTML (Jinja2)
-│   ├── base.html            # القالب الأساسي المشترك
-│   ├── login.html           # صفحة تسجيل الدخول
+├── templates/               # HTML templates (Jinja2)
+│   ├── base.html            # Shared base template
+│   ├── login.html           # Login page
 │   ├── instructor_dashboard.html
 │   ├── student_dashboard.html
 │   ├── admin_dashboard.html
@@ -171,79 +171,79 @@ E-Assessment System/
 │   └── ...
 │
 ├── scripts/
-│   ├── init_db.py           # تهيئة قاعدة البيانات من الصفر
-│   └── migrate_db.py        # ترقية قاعدة بيانات موجودة
+│   ├── init_db.py           # Initialize database from scratch
+│   └── migrate_db.py        # Apply migrations to an existing database
 │
-├── static/                  # ملفات ثابتة (CSS، JS، صور)
-├── submissions/             # ملفات إجابات الطلاب (محمية)
-└── question_images/         # صور الأسئلة المرفوعة
+├── static/                  # Static files (CSS, JS, images)
+├── submissions/             # Student submission files (protected)
+└── question_images/         # Uploaded question images
 ```
 
 ---
 
-## قاعدة البيانات
+## Database Schema
 
-يستخدم النظام **SQLite** مع تفعيل المفاتيح الخارجية (Foreign Keys).
+The system uses **SQLite** with Foreign Key constraints enabled.
 
-### الجداول الرئيسية
+### Main Tables
 
-| الجدول | الوصف |
+| Table | Description |
 |--------|--------|
-| `users` | المستخدمون (طلاب، محاضرون، مشرفون) |
-| `courses` | المقررات الدراسية |
-| `enrollments` | تسجيل الطلاب في المقررات |
-| `exams` | الاختبارات مع الجدول الزمني والمدة |
-| `questions` | أسئلة الاختبارات (ملف / MCQ) |
-| `submissions` | إجابات الطلاب المرفوعة والدرجات |
-| `mcq_answers` | إجابات الطلاب على أسئلة الاختيار من متعدد |
+| `users` | Users (Students, Instructors, Administrators) |
+| `courses` | Academic courses |
+| `enrollments` | Student course enrollments |
+| `exams` | Exams with schedules and duration |
+| `questions` | Exam questions (File upload / MCQ) |
+| `submissions` | Student submissions and grades |
+| `mcq_answers` | Student answers for MCQ questions |
 
 ---
 
-## الميزات
+## Features
 
-### 👨‍🏫 المحاضر
-- إنشاء وإدارة المقررات الدراسية
-- إنشاء اختبارات وربطها بمقرر معين
-- **جدولة الاختبارات تلقائياً** بتحديد وقت بدء مسبق
-- إضافة أسئلة بصيغتين:
-  - **ملف:** رفع ورقة أسئلة مع صورة اختيارية
-  - **MCQ:** أسئلة اختيار من متعدد مع تصحيح تلقائي فوري
-- بدء الاختبار يدوياً مع تحديد مدة الاختبار بالدقائق
-- إنهاء الاختبار في أي وقت
-- مراجعة إجابات الطلاب وإعطاء درجات وتعليقات
-- **تصدير تقرير الدرجات كملف PDF**
-- استيراد قائمة الطلاب عبر ملف CSV
+### 👨‍🏫 Instructor
+- Create and manage academic courses.
+- Create exams and link them to a specific course.
+- **Automated Exam Scheduling** by setting a scheduled start time.
+- Add questions in two formats:
+  - **File:** Upload question sheets with an optional helper image.
+  - **MCQ:** Multiple Choice Questions with immediate auto-grading.
+- Start exams manually with a defined duration in minutes.
+- End exams at any time.
+- Review student submissions, assign grades, and write feedback.
+- **Export grade reports to PDF**.
+- Import student lists in bulk via CSV.
 
-### 👨‍🎓 الطالب
-- عرض الاختبارات المتاحة المرتبطة بمقرراته
-- **مؤقت عدّ تنازلي** يظهر الوقت المتبقي أثناء الاختبار
-- رفع ملف الإجابة مع التحقق من الامتداد المسموح
-- الإجابة على أسئلة MCQ مباشرة في الواجهة
-- **عرض الدرجة والتعليقات** بعد التصحيح
+### 👨‍🎓 Student
+- View available exams associated with enrolled courses.
+- **Real-time countdown timer** showing remaining time during active exams.
+- Upload submission files with extension validation.
+- Answer MCQ questions directly in the interface.
+- **View grades and feedback** after grading is complete.
 
-### 🔧 مدير النظام
-- إنشاء حسابات المستخدمين وتعديلها وحذفها
-- تعيين دور كل مستخدم (طالب / محاضر / مدير)
-
----
-
-## حسابات تجريبية
-
-> هذه الحسابات للتطوير والاختبار فقط — **لا تستخدمها في الإنتاج**.
-
-| المستخدم | كلمة المرور | الدور |
-|----------|-------------|-------|
-| `instructor1` | `1234` | محاضر |
-| `student1` | `1234` | طالب |
-| `admin1` | `admin123` | مدير النظام |
-
-يتم إنشاء هذه الحسابات تلقائياً عند تشغيل `scripts/init_db.py`.
+### 🔧 System Administrator (Admin)
+- Create, modify, and delete user accounts.
+- Assign roles to users (Student / Instructor / Admin).
 
 ---
 
-## استيراد الطلاب عبر CSV
+## Demo Credentials
 
-يمكن للمحاضر استيراد قائمة طلاب دفعةً واحدة عبر ملف CSV بالتنسيق التالي:
+> These credentials are for development and testing only — **Do not use them in production**.
+
+| User | Password | Role |
+|------|----------|------|
+| `instructor1` | `1234` | Instructor |
+| `student1` | `1234` | Student |
+| `admin1` | `admin123` | System Administrator |
+
+These accounts are created automatically when you run `scripts/init_db.py`.
+
+---
+
+## Importing Students via CSV
+
+Instructors can import lists of students at once using a CSV file with the following format:
 
 ```csv
 username,full_name,password
@@ -252,34 +252,34 @@ student3,Sara Hassan,secure_pass
 student4,Mohammed Omar,
 ```
 
-**القواعد:**
-- عمود `username` **إلزامي** ويجب أن يكون فريداً.
-- عمود `full_name` اختياري.
-- إذا تُرك `password` فارغاً، يُستخدم كلمة المرور الافتراضية المحددة في نموذج الاستيراد.
+**Rules:**
+- `username` column is **required** and must be unique.
+- `full_name` column is optional.
+- If `password` is left empty, the default password specified in the import form will be used.
 
 ---
 
-## الأمان
+## Security
 
-| الميزة | التفاصيل |
+| Feature | Details |
 |--------|----------|
-| **تشفير كلمات المرور** | يستخدم `werkzeug.security` لتشفير وتحقق كلمات المرور (PBKDF2-SHA256) |
-| **حماية CSRF** | تفعيل `Flask-WTF CSRFProtect` على جميع النماذج |
-| **استعلامات آمنة** | استخدام Parameterized Queries لمنع SQL Injection |
-| **حماية الملفات** | حظر الوصول المباشر لمسار `/static/uploads/` عبر `before_request` |
-| **صلاحيات الأدوار** | فصل كامل بين صلاحيات المحاضر والطالب والمدير عبر Decorators |
-| **Cookie Flags** | `HttpOnly=True`، `SameSite=Lax`، دعم `Secure` عبر HTTPS |
-| **التحقق من الامتدادات** | قائمة بيضاء للملفات المسموح برفعها من الطلاب |
+| **Password Hashing** | Uses `werkzeug.security` for hashing and verification (PBKDF2-SHA256) |
+| **CSRF Protection** | Uses `Flask-WTF CSRFProtect` on all forms |
+| **Secure Queries** | Employs Parameterized Queries to prevent SQL Injection |
+| **File Protection** | Blocks direct public access to `/static/uploads/` directory via `before_request` handler |
+| **Role-based Access** | Enforces complete segregation between Instructor, Student, and Admin paths using custom decorators |
+| **Cookie Flags** | `HttpOnly=True`, `SameSite=Lax`, and `Secure` cookie support over HTTPS |
+| **File Verification** | Validates uploaded student files against an allowed extensions whitelist |
 
 ---
 
-## النشر على GitHub
+## Publishing to GitHub
 
-المشروع جاهز للنشر. الملفات التالية **لا تُرفع** تلقائياً (مُضافة لـ `.gitignore`):
-- مجلد `.venv/`
-- قاعدة البيانات `db.sqlite3`
-- ملف الإعدادات السرية `.env`
-- ملفات الطلاب في `submissions/`
+The project is pre-configured for deployment. The following files are **not pushed** automatically (included in `.gitignore`):
+- `.venv/` directory
+- `db.sqlite3` database file
+- `.env` secret configuration file
+- Student submissions in `submissions/`
 
 ```bash
 git init
@@ -290,10 +290,8 @@ git remote add origin https://github.com/YOUR_USERNAME/e-assessment-system.git
 git push -u origin main
 ```
 
-
 ---
 
-## 📄 الترخيص
+## 📄 License
 
-هذا المشروع مرخص بموجب [MIT License](LICENSE).
-
+This project is licensed under the [MIT License](LICENSE).
